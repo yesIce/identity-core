@@ -55,7 +55,7 @@ public class IdentityCorePlugin extends JavaPlugin {
                 this
         );
 
-        identityAPI = new IdentityAPIImpl(loadit.getContainer(), identityRepository, getLogger());
+        identityAPI = new IdentityAPIImpl(this, loadit.getContainer(), identityRepository, getLogger());
 
         PluginCommand cmd = getCommand("identity");
         if (cmd != null) {

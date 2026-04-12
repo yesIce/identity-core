@@ -53,6 +53,14 @@ public class IdentityRepository {
             "SELECT new_name FROM identity_name_history " +
             "WHERE player_id = ? ORDER BY changed_at ASC";
 
+    @Language("SQL")
+    private static final String TRANSFER_NAME_HISTORY =
+            "UPDATE identity_name_history SET player_id = ? WHERE player_id = ?";
+
+    @Language("SQL")
+    private static final String DELETE_IDENTITY =
+            "DELETE FROM identity_players WHERE id = ?";
+
     public IdentityRepository(DatabaseManager databaseManager) {
         this.databaseManager = databaseManager;
     }
@@ -174,5 +182,30 @@ public class IdentityRepository {
             }
         }
         return history;
+    }
+
+    public void transfer(int fromId, int toId) throws SQLException {
+        try (Connection conn = databaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement stmt = conn.prepareStatement(TRANSFER_NAME_HISTORY)) {
+                    stmt.setInt(1, toId);
+                    stmt.setInt(2, fromId);
+                    stmt.executeUpdate();
+                }
+
+                try (PreparedStatement stmt = conn.prepareStatement(DELETE_IDENTITY)) {
+                    stmt.setInt(1, fromId);
+                    stmt.executeUpdate();
+                }
+
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
     }
 }

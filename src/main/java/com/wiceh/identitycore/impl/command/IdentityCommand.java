@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class IdentityCommand implements CommandExecutor, TabCompleter {
 
@@ -54,6 +55,9 @@ public class IdentityCommand implements CommandExecutor, TabCompleter {
                 break;
             case "history":
                 handleHistory(sender, args);
+                break;
+            case "transfer":
+                handleTransfer(sender, args);
                 break;
             default:
                 sendUsage(sender, label);
@@ -122,6 +126,57 @@ public class IdentityCommand implements CommandExecutor, TabCompleter {
         }, runnable -> Bukkit.getScheduler().runTask(plugin, runnable));
     }
 
+    // /identity transfer <vecchio> <nuovo>
+    private void handleTransfer(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("identitycore.identity.transfer")) {
+            sender.sendMessage("§cNon hai il permesso.");
+            return;
+        }
+
+        if (args.length < 3) {
+            sender.sendMessage("§cUso: /identity transfer <vecchioNome> <nuovoNome>");
+            return;
+        }
+
+        String fromName = args[1];
+        String toName = args[2];
+
+        if (fromName.equalsIgnoreCase(toName)) {
+            sender.sendMessage("§cI due nomi non possono essere uguali.");
+            return;
+        }
+
+        sender.sendMessage("§7Trasferimento in corso da §f" + fromName + " §7→ §f" + toName + "§7...");
+
+        identityAPI.transfer(fromName, toName).thenAcceptAsync(result -> {
+            switch (result) {
+                case SUCCESS:
+                    sender.sendMessage(LINE);
+                    sender.sendMessage("§aTransferimento completato con successo.");
+                    sender.sendMessage("  §7Da     §8» §f" + fromName);
+                    sender.sendMessage("  §7A      §8» §f" + toName);
+                    sender.sendMessage("  §7Storico nomi e dati trasferiti.");
+                    sender.sendMessage(LINE);
+                    break;
+                case FROM_NOT_FOUND:
+                    sender.sendMessage("§cAccount §f" + fromName + " §cnon trovato.");
+                    break;
+                case TO_NOT_FOUND:
+                    sender.sendMessage("§cAccount §f" + toName + " §cnon trovato.");
+                    break;
+                case SAME_IDENTITY:
+                    sender.sendMessage("§cI due nomi appartengono già alla stessa identità.");
+                    break;
+                case FROM_IS_ONLINE:
+                    sender.sendMessage("§c§f" + fromName + " §cè online. Fallo disconnettere prima del transfer.");
+                    break;
+                case ERROR:
+                    sender.sendMessage("§cErrore durante il trasferimento. Controlla i log.");
+                    break;
+            }
+        }, runnable -> Bukkit.getScheduler().runTask(plugin, runnable));
+    }
+
     private void showIdentity(CommandSender sender, PlayerIdentity identity) {
         if (identity == null) {
             sender.sendMessage("§cIdentità non disponibile.");
@@ -159,6 +214,7 @@ public class IdentityCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§eIdentityCore §7- Comandi disponibili");
         sender.sendMessage("  §f/" + label + " info §7<nome> §8- §7Info identità");
         sender.sendMessage("  §f/" + label + " history §7<nome> §8- §7Storico nomi");
+        sender.sendMessage("  §f/" + label + " transfer §7<vecchio nome> <nuovo nome> §8- §7Trasferisci identità");
         sender.sendMessage(LINE);
     }
 
@@ -175,7 +231,7 @@ public class IdentityCommand implements CommandExecutor, TabCompleter {
         if (!sender.hasPermission(PERMISSION)) return Collections.emptyList();
 
         if (args.length == 1) {
-            return Arrays.asList("info", "history").stream()
+            return Stream.of("info", "history", "transfer")
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }

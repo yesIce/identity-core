@@ -1,5 +1,6 @@
 package com.wiceh.identitycore.api;
 
+import com.wiceh.identitycore.api.constants.TransferResult;
 import com.wiceh.identitycore.api.model.PlayerIdentity;
 import org.bukkit.entity.Player;
 
@@ -19,6 +20,8 @@ public interface IdentityAPI {
     CompletableFuture<Optional<PlayerIdentity>> findByName(String name);
 
     CompletableFuture<Optional<PlayerIdentity>> findById(int id);
+
+    CompletableFuture<TransferResult> transfer(String fromName, String toName);
 
     boolean isOnline(int id);
 

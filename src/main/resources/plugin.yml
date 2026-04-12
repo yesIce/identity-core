@@ -11,3 +11,11 @@ commands:
     description: Gestione identità giocatori
     permission: identitycore.identity.info
     usage: /identity <info|history> [nome]
+
+permissions:
+  identitycore.identity.info:
+    description: Permette di vedere le info identità
+    default: op
+  identitycore.identity.transfer:
+    description: Permette di trasferire identità tra account
+    default: op
