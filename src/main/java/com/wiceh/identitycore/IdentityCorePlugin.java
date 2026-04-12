@@ -3,17 +3,23 @@ package com.wiceh.identitycore;
 import com.wiceh.identitycore.api.IdentityAPI;
 import com.wiceh.identitycore.impl.*;
 import com.wiceh.identitycore.impl.command.IdentityCommand;
+import com.wiceh.identitycore.impl.IdentityListener;
 import com.wiceh.identitycore.storage.DatabaseManager;
 import com.wiceh.identitycore.storage.DatabaseManagerFactory;
 import com.wiceh.identitycore.storage.DriverLoader;
 import com.wiceh.identitycore.storage.IdentityRepository;
 import it.ytnoos.loadit.Loadit;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class IdentityCorePlugin extends JavaPlugin {
 
     private static IdentityCorePlugin instance;
+    private LuckPerms luckPerms;
 
     private DatabaseManager databaseManager;
     private Loadit<PlayerIdentityData> loadit;
@@ -22,6 +28,12 @@ public class IdentityCorePlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+
+        Plugin luckPermsPlugin = Bukkit.getPluginManager().getPlugin("LuckPerms");
+        if (luckPermsPlugin != null && luckPermsPlugin.isEnabled()) {
+            luckPerms = LuckPermsProvider.get();
+            getLogger().info("Loaded LuckPerms API!");
+        }
 
         saveDefaultConfig();
 
@@ -51,7 +63,7 @@ public class IdentityCorePlugin extends JavaPlugin {
         loadit.init();
 
         getServer().getPluginManager().registerEvents(
-                new IdentityListener(loadit.getContainer(), identityRepository, getLogger()),
+                new IdentityListener(loadit.getContainer(), identityRepository, getLogger(), luckPerms),
                 this
         );
 
@@ -80,5 +92,9 @@ public class IdentityCorePlugin extends JavaPlugin {
 
     public static IdentityCorePlugin getInstance() {
         return instance;
+    }
+
+    public LuckPerms getLuckPerms() {
+        return luckPerms;
     }
 }

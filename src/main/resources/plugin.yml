@@ -3,6 +3,7 @@ version: ${version}
 main: com.wiceh.identitycore.IdentityCorePlugin
 api-version: 1.13
 authors: [wIceh]
+soft-depend: [LuckPerms]
 description: Identity management for cracked servers
 
 load: STARTUP

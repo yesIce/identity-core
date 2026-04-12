@@ -137,7 +137,7 @@ public class IdentityAPIImpl implements IdentityAPI {
 
                 plugin.getServer().getScheduler().runTask(plugin, () ->
                         plugin.getServer().getPluginManager().callEvent(
-                                new IdentityTransferEvent(from.getId(), to.getId(), fromName, toName)
+                                new IdentityTransferEvent(from.getId(), to.getId(), fromName, toName, from.getUUID(), to.getUUID())
                         )
                 );
 
