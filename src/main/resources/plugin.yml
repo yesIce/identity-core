@@ -1,0 +1,13 @@
+name: IdentityCore
+version: ${version}
+main: com.wiceh.identitycore.IdentityCorePlugin
+api-version: 1.13
+authors: [wIceh]
+description: Identity management for cracked servers
+
+load: STARTUP
+commands:
+  identity:
+    description: Gestione identità giocatori
+    permission: identitycore.identity.info
+    usage: /identity <info|history> [nome]

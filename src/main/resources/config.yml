@@ -1,0 +1,11 @@
+database:
+  type: mysql # mysql | mariadb | postgresql | sqlite
+
+  host: localhost
+  port: 3306
+  name: identitycore
+  user: root
+  password: password
+
+  # sqlite only
+  file: plugins/IdentityCore/identitycore.db
