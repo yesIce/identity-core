@@ -151,7 +151,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly "com.wiceh.identitycore:identity-core:1.0.0"
+    compileOnly "com.wiceh.identitycore:identity-core:1.0.0-SNAPSHOT"
 }
 ```
 
@@ -182,7 +182,7 @@ dependencies {
 ## Building from source
 
 ```bash
-git clone https://github.com/wiceh/identity-core.git
+git clone https://github.com/yesIce/identity-core.git
 cd identity-core
 ./gradlew shadowJar
 ```
