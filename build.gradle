@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'maven-publish'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id "com.gradleup.shadow" version "9.4.1"
 }
 
 group = 'com.wiceh.identitycore'
@@ -19,7 +19,7 @@ repositories {
     }
     maven {
         name = "wiceh-repo"
-        url = "https://repo.wiceh.com/releases"
+        url = "https://repo.wiceh.com/releases/"
     }
 }
 
@@ -28,7 +28,7 @@ dependencies {
     compileOnly "org.jetbrains:annotations:24.0.0"
     compileOnly 'net.luckperms:api:5.4'
 
-    implementation "it.ytnoos.loadit:loadit:1.2.2"
+    implementation "com.wiceh.loadex:loadex:1.0.0"
     implementation "com.zaxxer:HikariCP:4.0.3"
 
     compileOnly "com.mysql:mysql-connector-j:8.0.33"
@@ -37,7 +37,7 @@ dependencies {
     compileOnly "org.xerial:sqlite-jdbc:3.42.0.0"
 }
 
-def targetJavaVersion = 8
+def targetJavaVersion = 21
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     sourceCompatibility = javaVersion
@@ -93,5 +93,11 @@ shadowJar {
     mergeServiceFiles()
 
     relocate 'com.zaxxer.hikari', 'com.wiceh.identitycore.libs.hikari'
-    relocate 'it.ytnoos.loadit', 'com.wiceh.identitycore.libs.loadit'
+    relocate 'com.wiceh.loadex', 'com.wiceh.identitycore.libs.loadex'
+}
+
+tasks {
+    build {
+        dependsOn(shadowJar)
+    }
 }

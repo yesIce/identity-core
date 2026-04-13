@@ -1,8 +1,11 @@
 package com.wiceh.identitycore.api.model;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface PlayerIdentity {
+
+    UUID getUuid();
 
     int getId();
 

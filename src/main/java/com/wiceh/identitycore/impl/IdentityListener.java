@@ -3,7 +3,7 @@ package com.wiceh.identitycore.impl;
 import com.wiceh.identitycore.api.event.IdentityTransferEvent;
 import com.wiceh.identitycore.api.event.NameChangeEvent;
 import com.wiceh.identitycore.storage.IdentityRepository;
-import it.ytnoos.loadit.api.DataContainer;
+import com.wiceh.loadex.api.DataCache;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
@@ -20,15 +20,15 @@ import java.util.logging.Logger;
 
 public class IdentityListener implements Listener {
 
-    private final DataContainer<PlayerIdentityData> container;
+    private final DataCache<PlayerIdentityData> cache;
     private final IdentityRepository repository;
     private final Logger logger;
     private final LuckPerms luckPerms;
 
-    public IdentityListener(DataContainer<PlayerIdentityData> container,
+    public IdentityListener(DataCache<PlayerIdentityData> cache,
                             IdentityRepository repository,
                             Logger logger, LuckPerms luckPerms) {
-        this.container = container;
+        this.cache = cache;
         this.repository = repository;
         this.logger = logger;
         this.luckPerms = luckPerms;
@@ -44,7 +44,7 @@ public class IdentityListener implements Listener {
                 ? "unknown"
                 : address.getAddress().getHostAddress();
 
-        container.acceptIfCached(player, data -> {
+        cache.ifCached(player, data -> {
             boolean nameChanged = !data.getLastName().equals(currentName);
 
             try {

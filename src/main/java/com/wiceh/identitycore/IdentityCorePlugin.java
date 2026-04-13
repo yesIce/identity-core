@@ -10,13 +10,16 @@ import com.wiceh.identitycore.storage.DatabaseManager;
 import com.wiceh.identitycore.storage.DatabaseManagerFactory;
 import com.wiceh.identitycore.storage.DriverLoader;
 import com.wiceh.identitycore.storage.IdentityRepository;
-import it.ytnoos.loadit.Loadit;
+import com.wiceh.loadex.api.Loadex;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class IdentityCorePlugin extends JavaPlugin {
 
@@ -25,8 +28,11 @@ public class IdentityCorePlugin extends JavaPlugin {
 
     private DatabaseManager databaseManager;
     private IdentityRepository identityRepository;
-    private Loadit<PlayerIdentityData> loadit;
+    private Loadex<PlayerIdentityData> loadex;
+
+    private ExecutorService apiExecutor;
     private IdentityAPI identityAPI;
+
     private MessageManager messageManager;
 
 
@@ -63,16 +69,20 @@ public class IdentityCorePlugin extends JavaPlugin {
         identityRepository = new IdentityRepository(databaseManager);
 
         IdentityLoader loader = new IdentityLoader(identityRepository, getLogger());
-        loadit = Loadit.createInstance(this, loader);
-        loadit.addListener(new IdentityLoaditListener(this));
-        loadit.init();
+        loadex = Loadex.<PlayerIdentityData>builder(this, loader)
+                .addListener(new IdentityLoadexListener(this))
+                .debug(getConfig().getBoolean("debug", false))
+                .build();
+        loadex.enable();
 
         getServer().getPluginManager().registerEvents(
-                new IdentityListener(loadit.getContainer(), identityRepository, getLogger(), luckPerms),
+                new IdentityListener(loadex.cache(), identityRepository, getLogger(), luckPerms),
                 this
         );
 
-        identityAPI = new IdentityAPIImpl(this, loadit.getContainer(), identityRepository, getLogger());
+        apiExecutor = Executors.newVirtualThreadPerTaskExecutor();
+        identityAPI = new IdentityAPIImpl(this, loadex.cache(), identityRepository, getLogger(), apiExecutor);
+
         messageManager = new BaseMessageManager(this);
 
         PluginCommand cmd = getCommand("identity");
@@ -101,7 +111,8 @@ public class IdentityCorePlugin extends JavaPlugin {
             });
         }
 
-        if (loadit != null) loadit.stop();
+        if (loadex != null) loadex.disable();
+        if (apiExecutor != null) apiExecutor.close();
         if (databaseManager != null) databaseManager.close();
         getLogger().info("IdentityCore disabled.");
     }

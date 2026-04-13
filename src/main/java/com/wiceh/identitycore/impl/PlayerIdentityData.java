@@ -1,13 +1,13 @@
 package com.wiceh.identitycore.impl;
 
 import com.wiceh.identitycore.api.model.PlayerIdentity;
-import it.ytnoos.loadit.api.UserData;
+import com.wiceh.loadex.api.PlayerData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.UUID;
 
-public class PlayerIdentityData extends UserData implements PlayerIdentity {
+public class PlayerIdentityData extends PlayerData implements PlayerIdentity {
 
     private final int id;
     private final String registeredName;
@@ -15,12 +15,14 @@ public class PlayerIdentityData extends UserData implements PlayerIdentity {
 
     private String lastIp;
     private long lastSeenAt;
-    private List<String> nameHistory;
+    private final List<String> nameHistory;
 
-    public PlayerIdentityData(@NotNull UUID bukkitUuid, @NotNull String name, @NotNull int id,
+    public PlayerIdentityData(@NotNull UUID bukkitUuid, @NotNull String name, int id,
                               @NotNull String registeredName, @NotNull String lastIp, long registeredAt,
                               long lastSeenAt, @NotNull List<String> nameHistory) {
         super(bukkitUuid, name);
+
+
 
         this.id = id;
         this.registeredName = registeredName;
@@ -29,6 +31,11 @@ public class PlayerIdentityData extends UserData implements PlayerIdentity {
         this.lastIp = lastIp;
         this.lastSeenAt = lastSeenAt;
         this.nameHistory = nameHistory;
+    }
+
+    @Override
+    public UUID getUuid() {
+        return uuid();
     }
 
     @Override
@@ -63,7 +70,7 @@ public class PlayerIdentityData extends UserData implements PlayerIdentity {
 
     @Override
     public String getLastName() {
-        return name;
+        return name();
     }
 
     public void setLastIp(String lastIp) {
@@ -72,9 +79,5 @@ public class PlayerIdentityData extends UserData implements PlayerIdentity {
 
     public void setLastSeenAt(long lastSeenAt) {
         this.lastSeenAt = lastSeenAt;
-    }
-
-    public void setNameHistory(List<String> nameHistory) {
-        this.nameHistory = nameHistory;
     }
 }

@@ -5,7 +5,7 @@ import com.wiceh.identitycore.api.constants.TransferResult;
 import com.wiceh.identitycore.api.event.IdentityTransferEvent;
 import com.wiceh.identitycore.api.model.PlayerIdentity;
 import com.wiceh.identitycore.storage.IdentityRepository;
-import it.ytnoos.loadit.api.DataContainer;
+import com.wiceh.loadex.api.DataCache;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,29 +23,32 @@ import java.util.stream.Collectors;
 public class IdentityAPIImpl implements IdentityAPI {
 
     private final Plugin plugin;
-    private final DataContainer<PlayerIdentityData> container;
+    private final DataCache<PlayerIdentityData> cache;
     private final IdentityRepository repository;
     private final Logger logger;
+    private final ExecutorService executor;
 
     public IdentityAPIImpl(Plugin plugin,
-                           DataContainer<PlayerIdentityData> container,
+                           DataCache<PlayerIdentityData> cache,
                            IdentityRepository repository,
-                           Logger logger) {
+                           Logger logger,
+                           ExecutorService executor) {
         this.plugin = plugin;
-        this.container = container;
+        this.cache = cache;
         this.repository = repository;
         this.logger = logger;
+        this.executor = executor;
     }
 
     @Override
     public Optional<PlayerIdentity> getIdentity(Player player) {
-        return container.getCached(player.getUniqueId())
+        return cache.get(player.getUniqueId())
                 .map(data -> data);
     }
 
     @Override
     public Optional<PlayerIdentity> getIdentity(UUID bukkitUUID) {
-        return container.getCached(bukkitUUID)
+        return cache.get(bukkitUUID)
                 .map(data -> data);
     }
 
@@ -61,7 +65,7 @@ public class IdentityAPIImpl implements IdentityAPI {
                 logger.log(Level.SEVERE, "Failed to findByBukkitUuid " + bukkitUuid, e);
                 return Optional.empty();
             }
-        }, container.getExecutor());
+        }, executor);
     }
 
     @Override
@@ -77,7 +81,7 @@ public class IdentityAPIImpl implements IdentityAPI {
                 logger.log(Level.SEVERE, "Failed to findByName " + name, e);
                 return Optional.empty();
             }
-        }, container.getExecutor());
+        }, executor);
     }
 
     @Override
@@ -92,7 +96,7 @@ public class IdentityAPIImpl implements IdentityAPI {
                 logger.log(Level.SEVERE, "Failed to findById " + id, e);
                 return Optional.empty();
             }
-        }, container.getExecutor());
+        }, executor);
     }
 
     @Override
@@ -102,12 +106,12 @@ public class IdentityAPIImpl implements IdentityAPI {
 
     @Override
     public void forEach(Consumer<PlayerIdentity> consumer) {
-        container.forEach(consumer::accept);
+        cache.forEach(consumer::accept);
     }
 
     private Optional<PlayerIdentity> findInCacheByName(String name) {
         final Optional<PlayerIdentity>[] result = new Optional[]{Optional.empty()};
-        container.forEach(data -> {
+        cache.forEach(data -> {
             if (data.getLastName().equalsIgnoreCase(name))
                 result[0] = Optional.of(data);
         });
@@ -116,7 +120,7 @@ public class IdentityAPIImpl implements IdentityAPI {
 
     private Optional<PlayerIdentity> findInCacheById(int id) {
         final Optional<PlayerIdentity>[] result = new Optional[]{Optional.empty()};
-        container.forEach(data -> {
+        cache.forEach(data -> {
             if (data.getId() == id) result[0] = Optional.of(data);
         });
         return result[0];
@@ -127,10 +131,10 @@ public class IdentityAPIImpl implements IdentityAPI {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 Optional<PlayerIdentityData> fromOpt = repository.findByName(fromName);
-                if (!fromOpt.isPresent()) return TransferResult.FROM_NOT_FOUND;
+                if (fromOpt.isEmpty()) return TransferResult.FROM_NOT_FOUND;
 
                 Optional<PlayerIdentityData> toOpt = repository.findByName(toName);
-                if (!toOpt.isPresent()) return TransferResult.TO_NOT_FOUND;
+                if (toOpt.isEmpty()) return TransferResult.TO_NOT_FOUND;
 
                 PlayerIdentityData from = fromOpt.get();
                 PlayerIdentityData to = toOpt.get();
@@ -140,7 +144,7 @@ public class IdentityAPIImpl implements IdentityAPI {
 
                 plugin.getServer().getScheduler().runTask(plugin, () ->
                         plugin.getServer().getPluginManager().callEvent(
-                                new IdentityTransferEvent(from.getId(), to.getId(), fromName, toName, from.getUUID(), to.getUUID())
+                                new IdentityTransferEvent(from.getId(), to.getId(), fromName, toName, from.getUuid(), to.getUuid())
                         )
                 );
 
@@ -151,7 +155,7 @@ public class IdentityAPIImpl implements IdentityAPI {
                 logger.log(Level.SEVERE, "Failed to transfer " + fromName + " -> " + toName, e);
                 return TransferResult.ERROR;
             }
-        }, container.getExecutor());
+        }, executor);
     }
 
     @Override
@@ -165,6 +169,6 @@ public class IdentityAPIImpl implements IdentityAPI {
                 logger.log(Level.SEVERE, "Failed to findAllByIp " + ip, e);
                 return Collections.emptyList();
             }
-        }, container.getExecutor());
+        }, executor);
     }
 }

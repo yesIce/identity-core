@@ -1,8 +1,8 @@
 package com.wiceh.identitycore.impl;
 
 import com.wiceh.identitycore.storage.IdentityRepository;
-import it.ytnoos.loadit.api.DataLoader;
-import it.ytnoos.loadit.api.LoadResult;
+import com.wiceh.loadex.api.DataLoader;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -20,7 +20,7 @@ public class IdentityLoader implements DataLoader<PlayerIdentityData> {
     }
 
     @Override
-    public Optional<PlayerIdentityData> getOrCreate(UUID bukkitUuid, String name) {
+    public @NotNull Optional<PlayerIdentityData> loadOrCreate(@NotNull UUID bukkitUuid, @NotNull String name) {
         try {
             Optional<PlayerIdentityData> existing = repository.findByBukkitUuid(bukkitUuid);
             if (existing.isPresent()) return existing;
@@ -33,7 +33,7 @@ public class IdentityLoader implements DataLoader<PlayerIdentityData> {
     }
 
     @Override
-    public Optional<PlayerIdentityData> load(UUID bukkitUuid) {
+    public @NotNull Optional<PlayerIdentityData> loadByUuid(@NotNull UUID bukkitUuid) {
         try {
             return repository.findByBukkitUuid(bukkitUuid);
         } catch (Exception e) {
@@ -43,17 +43,12 @@ public class IdentityLoader implements DataLoader<PlayerIdentityData> {
     }
 
     @Override
-    public Optional<PlayerIdentityData> load(String name) {
+    public @NotNull Optional<PlayerIdentityData> loadByName(@NotNull String name) {
         try {
             return repository.findByName(name);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to load identity for name " + name, e);
             return Optional.empty();
         }
-    }
-
-    @Override
-    public String getErrorMessage(LoadResult result, UUID uuid, String name) {
-        return "§cErrore durante il caricamento del tuo profilo.\n§7(" + result.name() + ")";
     }
 }

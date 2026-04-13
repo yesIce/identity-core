@@ -30,7 +30,7 @@ public enum MessageKey {
     LOOKUP_EMPTY("  §7No other accounts found for this IP."),
     LOOKUP_ACCOUNTS_HEADER("  §7Accounts with same IP §8({count})§7:"),
     LOOKUP_ENTRY("  §8- §f{name} §8(ID: {id}) {status}"),
-    INFO_NAME_HISTORY_EMPTY(""),
+    INFO_NAME_HISTORY_EMPTY("  §7Name history §8» §7none"),
 
     CONFIG_RELOADED("§aConfiguration reloaded.");
 
