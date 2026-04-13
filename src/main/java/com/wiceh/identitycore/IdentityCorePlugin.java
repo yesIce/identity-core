@@ -1,9 +1,11 @@
 package com.wiceh.identitycore;
 
 import com.wiceh.identitycore.api.IdentityAPI;
+import com.wiceh.identitycore.api.manager.MessageManager;
 import com.wiceh.identitycore.impl.*;
 import com.wiceh.identitycore.impl.command.IdentityCommand;
 import com.wiceh.identitycore.impl.IdentityListener;
+import com.wiceh.identitycore.impl.manager.BaseMessageManager;
 import com.wiceh.identitycore.storage.DatabaseManager;
 import com.wiceh.identitycore.storage.DatabaseManagerFactory;
 import com.wiceh.identitycore.storage.DriverLoader;
@@ -22,8 +24,11 @@ public class IdentityCorePlugin extends JavaPlugin {
     private LuckPerms luckPerms;
 
     private DatabaseManager databaseManager;
+    private IdentityRepository identityRepository;
     private Loadit<PlayerIdentityData> loadit;
     private IdentityAPI identityAPI;
+    private MessageManager messageManager;
+
 
     @Override
     public void onEnable() {
@@ -55,9 +60,9 @@ public class IdentityCorePlugin extends JavaPlugin {
             return;
         }
 
-        IdentityRepository identityRepository = new IdentityRepository(databaseManager);
-        IdentityLoader loader = new IdentityLoader(identityRepository, getLogger());
+        identityRepository = new IdentityRepository(databaseManager);
 
+        IdentityLoader loader = new IdentityLoader(identityRepository, getLogger());
         loadit = Loadit.createInstance(this, loader);
         loadit.addListener(new IdentityLoaditListener(this));
         loadit.init();
@@ -68,6 +73,7 @@ public class IdentityCorePlugin extends JavaPlugin {
         );
 
         identityAPI = new IdentityAPIImpl(this, loadit.getContainer(), identityRepository, getLogger());
+        messageManager = new BaseMessageManager(this);
 
         PluginCommand cmd = getCommand("identity");
         if (cmd != null) {
@@ -81,13 +87,23 @@ public class IdentityCorePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (identityAPI != null && identityRepository != null) {
+            identityAPI.forEach(identity -> {
+                if (identity instanceof PlayerIdentityData) {
+                    PlayerIdentityData data = (PlayerIdentityData) identity;
+                    data.setLastSeenAt(System.currentTimeMillis());
+                    try {
+                        identityRepository.updateOnJoin(data, data.getLastName(), data.getLastIp());
+                    } catch (Exception e) {
+                        getLogger().warning("Failed to save last_seen for " + data.getLastName());
+                    }
+                }
+            });
+        }
+
         if (loadit != null) loadit.stop();
         if (databaseManager != null) databaseManager.close();
         getLogger().info("IdentityCore disabled.");
-    }
-
-    public static IdentityAPI getAPI() {
-        return instance.identityAPI;
     }
 
     public static IdentityCorePlugin getInstance() {
@@ -96,5 +112,17 @@ public class IdentityCorePlugin extends JavaPlugin {
 
     public LuckPerms getLuckPerms() {
         return luckPerms;
+    }
+
+    public DatabaseManager getDatabaseManager() {
+        return databaseManager;
+    }
+
+    public static IdentityAPI getAPI() {
+        return instance.identityAPI;
+    }
+
+    public static MessageManager getMessageManager() {
+        return instance.messageManager;
     }
 }

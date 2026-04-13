@@ -3,7 +3,9 @@ package com.wiceh.identitycore.impl;
 import com.wiceh.identitycore.api.IdentityAPI;
 import com.wiceh.identitycore.api.constants.TransferResult;
 import com.wiceh.identitycore.api.event.IdentityTransferEvent;
+import com.wiceh.identitycore.api.manager.MessageManager;
 import com.wiceh.identitycore.api.model.PlayerIdentity;
+import com.wiceh.identitycore.impl.manager.BaseMessageManager;
 import com.wiceh.identitycore.storage.IdentityRepository;
 import it.ytnoos.loadit.api.DataContainer;
 import org.bukkit.entity.Player;
@@ -25,6 +27,7 @@ public class IdentityAPIImpl implements IdentityAPI {
     private final DataContainer<PlayerIdentityData> container;
     private final IdentityRepository repository;
     private final Logger logger;
+    private final MessageManager messageManager;
 
     public IdentityAPIImpl(Plugin plugin,
                            DataContainer<PlayerIdentityData> container,
@@ -34,6 +37,7 @@ public class IdentityAPIImpl implements IdentityAPI {
         this.container = container;
         this.repository = repository;
         this.logger = logger;
+        this.messageManager = new BaseMessageManager(plugin);
     }
 
     @Override
@@ -166,5 +170,10 @@ public class IdentityAPIImpl implements IdentityAPI {
                 return Collections.emptyList();
             }
         }, container.getExecutor());
+    }
+
+    @Override
+    public MessageManager getMessageManager() {
+        return messageManager;
     }
 }
