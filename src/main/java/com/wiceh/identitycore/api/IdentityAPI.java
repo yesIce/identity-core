@@ -1,7 +1,6 @@
 package com.wiceh.identitycore.api;
 
 import com.wiceh.identitycore.api.constants.TransferResult;
-import com.wiceh.identitycore.api.manager.MessageManager;
 import com.wiceh.identitycore.api.model.PlayerIdentity;
 import org.bukkit.entity.Player;
 
