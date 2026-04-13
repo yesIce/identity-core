@@ -41,6 +41,7 @@ player_id=42  money=15000.00   -- still there after a name change
 - **Name history tracking** — full log of every nickname a player has ever used
 - **Cross-plugin event system** — `PlayerIdentityLoadEvent`, `NameChangeEvent`, `IdentityTransferEvent`
 - **Manual identity transfer** — `/identity transfer <old> <new>` for merging cracked accounts
+- **LuckPerms support** — permissions and groups are automatically migrated on transfer (optional, requires LuckPerms)
 - **Multi-database support** — MySQL, MariaDB, PostgreSQL, SQLite
 - **Built on [Loadit](https://github.com/ytnoos/loadit)** — race-condition-safe async data loading
 - **Zero external dependencies at runtime** — drivers are downloaded automatically on first boot
@@ -71,6 +72,22 @@ database:
   # only used when type is sqlite
   file: plugins/IdentityCore/identitycore.db
 ```
+
+---
+
+## LuckPerms Integration
+
+IdentityCore has **built-in LuckPerms support**. No extra plugins or bridges needed.
+
+When `/identity transfer <old> <new>` is executed, IdentityCore automatically:
+
+1. Copies all permissions, groups and metadata from the old UUID to the new one via the LuckPerms API
+2. Saves the updated user data
+3. Deletes the old UUID's data from LuckPerms
+
+This means a cracked player who changes their nickname and gets transferred will keep all their ranks and permissions without any manual intervention.
+
+> **Note:** LuckPerms integration is optional. If LuckPerms is not installed, IdentityCore works normally and simply skips the permission migration step.
 
 ---
 
@@ -119,7 +136,7 @@ public void onNameChange(NameChangeEvent event) {
     String newName = event.getNewName();
 }
 
-// fired before a transfer completes — migrate your data here
+// fired before a transfer completes — migrate your own data here
 @EventHandler
 public void onTransfer(IdentityTransferEvent event) {
     myRepository.transferPlayer(event.getFromId(), event.getToId());
@@ -146,7 +163,7 @@ dependencies {
 |---|---|---|
 | `/identity info <name>` | View identity info for any player | `identitycore.identity.info` |
 | `/identity history <name>` | View full name change history | `identitycore.identity.info` |
-| `/identity transfer <old> <new>` | Merge two identities (irreversible) | `identitycore.identity.transfer` |
+| `/identity transfer <old> <new>` | Merge two identities — also migrates LuckPerms data | `identitycore.identity.transfer` |
 
 ---
 
@@ -158,6 +175,7 @@ dependencies {
 | Paper | 1.8 — latest |
 | online-mode | `true` and `false` |
 | Java | 8+ |
+| LuckPerms | 5.x (optional) |
 
 ---
 
