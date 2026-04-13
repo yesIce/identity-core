@@ -9,12 +9,15 @@ import it.ytnoos.loadit.api.DataContainer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class IdentityAPIImpl implements IdentityAPI {
 
@@ -147,6 +150,20 @@ public class IdentityAPIImpl implements IdentityAPI {
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Failed to transfer " + fromName + " -> " + toName, e);
                 return TransferResult.ERROR;
+            }
+        }, container.getExecutor());
+    }
+
+    @Override
+    public CompletableFuture<List<PlayerIdentity>> findAllByIp(String ip) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return repository.findAllByIp(ip).stream()
+                        .map(data -> (PlayerIdentity) data)
+                        .collect(Collectors.toList());
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Failed to findAllByIp " + ip, e);
+                return Collections.emptyList();
             }
         }, container.getExecutor());
     }

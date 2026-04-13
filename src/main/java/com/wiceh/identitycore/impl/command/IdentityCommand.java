@@ -14,9 +14,9 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,6 +58,9 @@ public class IdentityCommand implements CommandExecutor, TabCompleter {
                 break;
             case "transfer":
                 handleTransfer(sender, args);
+                break;
+            case "lookup":
+                handleLookup(sender, args);
                 break;
             default:
                 sendUsage(sender, label);
@@ -177,6 +180,51 @@ public class IdentityCommand implements CommandExecutor, TabCompleter {
         }, runnable -> Bukkit.getScheduler().runTask(plugin, runnable));
     }
 
+    // /identity lookup <player>
+    private void handleLookup(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("§cUso: /identity lookup <nome>");
+            return;
+        }
+
+        String player = args[1];
+        sender.sendMessage("§7Ricerca account per IP di §f" + player + "§7...");
+
+        identityAPI.findByName(player).thenComposeAsync(optIdentity -> {
+            if (!optIdentity.isPresent()) {
+                sender.sendMessage("§cNessuna identità trovata per §f" + player);
+                return CompletableFuture.completedFuture(Collections.emptyList());
+            }
+
+            String ip = optIdentity.get().getLastIp();
+            return identityAPI.findAllByIp(ip);
+        }).thenAcceptAsync(accounts -> {
+            if (accounts.isEmpty()) return;
+
+            List<PlayerIdentity> alts = accounts.stream()
+                    .filter(i -> !i.getLastName().equalsIgnoreCase(player))
+                    .collect(Collectors.toList());
+
+            sender.sendMessage(LINE);
+            sender.sendMessage("§eLookup IP §8| §f" + player);
+
+            if (alts.isEmpty()) {
+                sender.sendMessage("  §7Nessun altro account trovato per questo IP.");
+            } else {
+                sender.sendMessage("  §7Account con stesso IP §8(" + alts.size() + ")§7:");
+                for (PlayerIdentity alt : alts) {
+                    boolean online = identityAPI.isOnline(alt.getId());
+                    sender.sendMessage("  §8- §f" + alt.getLastName()
+                            + " §8(ID: " + alt.getId() + ")"
+                            + (online ? " §a●" : " §c●"));
+                }
+            }
+
+            sender.sendMessage(LINE);
+
+        }, runnable -> Bukkit.getScheduler().runTask(plugin, runnable));
+    }
+
     private void showIdentity(CommandSender sender, PlayerIdentity identity) {
         if (identity == null) {
             sender.sendMessage("§cIdentità non disponibile.");
@@ -187,11 +235,11 @@ public class IdentityCommand implements CommandExecutor, TabCompleter {
 
         sender.sendMessage(LINE);
         sender.sendMessage("§eIdentity Info §8| "
-                           + (isOnline ? "§a● Online" : "§c● Offline"));
+                + (isOnline ? "§a● Online" : "§c● Offline"));
         sender.sendMessage(LINE);
         sender.sendMessage("  §7ID §8» §f" + identity.getId());
         sender.sendMessage("  §7Nome attuale §8» §a" + identity.getLastName()
-                           + (isOnline ? " §7(online)" : ""));
+                + (isOnline ? " §7(online)" : ""));
         sender.sendMessage("  §7Registrato   §8» §f" + identity.getRegisteredName());
         sender.sendMessage("  §7Ultimo IP    §8» §f" + identity.getLastIp());
         sender.sendMessage("  §7Primo accesso §8» §f" + format(identity.getRegisteredAt()));
@@ -202,8 +250,8 @@ public class IdentityCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("  §7Storico nomi §8» §7nessuno");
         } else {
             sender.sendMessage("  §7Storico nomi §8» §e"
-                               + String.join("§7, §e", history)
-                               + " §8(" + history.size() + ")");
+                    + String.join("§7, §e", history)
+                    + " §8(" + history.size() + ")");
         }
 
         sender.sendMessage(LINE);
@@ -215,6 +263,7 @@ public class IdentityCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("  §f/" + label + " info §7<nome> §8- §7Info identità");
         sender.sendMessage("  §f/" + label + " history §7<nome> §8- §7Storico nomi");
         sender.sendMessage("  §f/" + label + " transfer §7<vecchio nome> <nuovo nome> §8- §7Trasferisci identità");
+        sender.sendMessage("  §f/" + label + " lookup §7<nome> §8- §7Alt accounts");
         sender.sendMessage(LINE);
     }
 
@@ -231,13 +280,14 @@ public class IdentityCommand implements CommandExecutor, TabCompleter {
         if (!sender.hasPermission(PERMISSION)) return Collections.emptyList();
 
         if (args.length == 1) {
-            return Stream.of("info", "history", "transfer")
+            return Stream.of("info", "history", "transfer", "lookup")
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
 
         if (args.length == 2 && (args[0].equalsIgnoreCase("info")
-                                 || args[0].equalsIgnoreCase("history"))) {
+                || args[0].equalsIgnoreCase("history")
+                || args[0].equalsIgnoreCase("lookup"))) {
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
                     .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))

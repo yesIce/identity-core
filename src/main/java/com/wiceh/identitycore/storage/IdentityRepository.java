@@ -61,6 +61,10 @@ public class IdentityRepository {
     private static final String DELETE_IDENTITY =
             "DELETE FROM identity_players WHERE id = ?";
 
+    @Language("SQL")
+    private static final String SELECT_BY_IP =
+            "SELECT * FROM identity_players WHERE last_ip = ?";
+
     public IdentityRepository(DatabaseManager databaseManager) {
         this.databaseManager = databaseManager;
     }
@@ -207,5 +211,17 @@ public class IdentityRepository {
                 conn.setAutoCommit(true);
             }
         }
+    }
+
+    public List<PlayerIdentityData> findAllByIp(String ip) throws SQLException {
+        List<PlayerIdentityData> results = new ArrayList<>();
+        try (Connection conn = databaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SELECT_BY_IP)) {
+            stmt.setString(1, ip);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) results.add(mapRow(conn, rs));
+            }
+        }
+        return results;
     }
 }
